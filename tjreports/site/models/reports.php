@@ -15,6 +15,8 @@ jimport('joomla.application.component.modellist');
 // Load TJReports db helper
 JLoader::import('database', JPATH_SITE . '/components/com_tjreports/helpers');
 
+use Joomla\CMS\Date\Date;
+
 /**
  * Methods supporting a list of Tjreports records.
  *
@@ -36,6 +38,9 @@ class TjreportsModelReports extends JModelList
 
 	// Columns array contain columns data
 	public $columns = array();
+
+	// Columns array contain email columns
+	private $emailColumn = '';
 
 	// Columns that a user can select to display
 	public $showhideCols = array();
@@ -90,6 +95,18 @@ class TjreportsModelReports extends JModelList
 			// Set custom fields columns
 			$this->setCustomFieldsColumns();
 		}
+
+		// Get email column
+		$this->emailColumn = array_search(
+			1,
+			array_map(
+				function ($ar)
+				{
+					return $ar['emailColumn'];
+				},
+				$this->columns
+			)
+		);
 
 		$this->initData();
 
@@ -525,6 +542,11 @@ class TjreportsModelReports extends JModelList
 		$value = $input->get('limitstart', 0, 'uint');
 		$this->setState('list.start', $value);
 
+		if ($this->emailColumn)
+		{
+			$this->setState('emailColumn', $this->emailColumn);
+		}
+
 		// Ordering
 		$this->default_order = $input->get('filter_order', $this->default_order, 'STRING');
 
@@ -609,12 +631,14 @@ class TjreportsModelReports extends JModelList
 						if (!empty($filters[$fromCol]))
 						{
 							$fromTime = $filters[$fromCol] . ' 00:00:00';
+							$fromTime = new Date($fromTime, 'UTC');
 							$query->where($dispFilter['searchin'] . ' >= ' . $db->quote($fromTime));
 						}
 
 						if (!empty($filters[$toCol]))
 						{
 							$toTime = $filters[$toCol] . ' 23:59:59';
+							$toTime = new Date($toTime, 'UTC');
 							$query->where($dispFilter['searchin'] . ' <= ' . $db->quote($toTime));
 						}
 					}
@@ -1094,6 +1118,11 @@ class TjreportsModelReports extends JModelList
 		if (!empty($showhideCols))
 		{
 			$this->showhideCols = $showhideCols;
+		}
+
+		if (!empty($emailColumn))
+		{
+			$this->emailColumn = $emailColumn;
 		}
 	}
 
